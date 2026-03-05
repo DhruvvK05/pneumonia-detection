@@ -1,0 +1,9 @@
+tensorflow==2.13
+mlflow
+dvc[gdrive]
+scikit-learn
+matplotlib
+pandas
+numpy
+opencv-python
+scipy
