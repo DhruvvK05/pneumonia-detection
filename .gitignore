@@ -6,5 +6,9 @@ dist/
 wheels/
 *.egg-info
 
+chest_xray/
+models/
+.venv/
+mlruns/
 # Virtual environments
 .venv
