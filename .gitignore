@@ -10,5 +10,7 @@ chest_xray/
 models/
 .venv/
 mlruns/
+__pycache__/
+*.pyc
 # Virtual environments
 .venv
