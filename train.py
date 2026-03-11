@@ -2,6 +2,8 @@ import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
+import mlflow
+import mlflow.tensorflow
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications import EfficientNetB0
@@ -15,6 +17,18 @@ EPOCHS = 10
 TRAIN_DIR = "chest_xray/train"
 VAL_DIR = "chest_xray/val"
 TEST_DIR = "chest_xray/test"
+
+
+# START MLFLOW RUN
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+mlflow.set_experiment("Pneumonia Detection CNN")
+mlflow.start_run(run_name="efficientnet_finetune")
+
+# Log parameters
+mlflow.log_param("img_size", IMG_SIZE)
+mlflow.log_param("batch_size", BATCH_SIZE)
+mlflow.log_param("epochs", EPOCHS)
+
 
 train_datagen = ImageDataGenerator(
     preprocessing_function=preprocess_input,
@@ -90,11 +104,13 @@ callbacks = [
         save_best_only=True
     )
 ]
+
 class_weight = {
-    0: 1.0,   
-    1: 0.8,   
-    2: 1.0    
+    0: 1.0,
+    1: 0.8,
+    2: 1.0
 }
+
 history = model.fit(
     train_gen,
     validation_data=val_gen,
@@ -102,17 +118,15 @@ history = model.fit(
     callbacks=callbacks,
     class_weight=class_weight
 )
-print("Starting Fine-Tuning...")
 
+print("Starting Fine-Tuning...")
 
 model.load_weights("models/best_model.keras")
 
 base_model.trainable = True
 
-
 for layer in base_model.layers[:-30]:
     layer.trainable = False
-
 
 model.compile(
     optimizer=tf.keras.optimizers.Adam(1e-5),
@@ -131,4 +145,16 @@ loss, acc = model.evaluate(test_gen)
 
 print(f"Test Accuracy: {acc*100:.2f}%")
 
+
+# Log metric to MLflow
+mlflow.log_metric("test_accuracy", acc)
+
+
 model.save("models/final_model.keras")
+
+
+# Log model to MLflow
+mlflow.tensorflow.log_model(model, "pneumonia_model")
+
+# End MLflow run
+mlflow.end_run()

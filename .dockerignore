@@ -1,0 +1,5 @@
+.venv
+mlruns
+dvc_storage
+.git
+__pycache__

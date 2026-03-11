@@ -1,0 +1,8 @@
+stages:
+  train_model:
+    cmd: python train.py
+    deps:
+    - chest_xray
+    - train.py
+    outs:
+    - models/best_model.keras

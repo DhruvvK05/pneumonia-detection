@@ -1,0 +1,19 @@
+schema: '2.0'
+stages:
+  train_model:
+    cmd: python train.py
+    deps:
+    - path: chest_xray
+      hash: md5
+      md5: b3f3841b478fe1315330bceaeb545cc3.dir
+      size: 1236482806
+      nfiles: 5856
+    - path: train.py
+      hash: md5
+      md5: 5666981de46b796e2bc5bf0402755908
+      size: 3651
+    outs:
+    - path: models/best_model.keras
+      hash: md5
+      md5: 73e0930a3309ec69e3be204396f33d2c
+      size: 21037127

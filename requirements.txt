@@ -1,9 +1,8 @@
-tensorflow==2.13
+tensorflow
 mlflow
-dvc[gdrive]
-scikit-learn
-matplotlib
-pandas
+dvc
 numpy
+pandas
+scikit-learn
+pillow
 opencv-python
-scipy
