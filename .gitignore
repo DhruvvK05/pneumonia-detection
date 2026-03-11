@@ -14,3 +14,4 @@ __pycache__/
 *.pyc
 # Virtual environments
 .venv
+/chest_xray

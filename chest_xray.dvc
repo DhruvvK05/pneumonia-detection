@@ -1,0 +1,6 @@
+outs:
+- md5: b3f3841b478fe1315330bceaeb545cc3.dir
+  size: 1236482806
+  nfiles: 5856
+  hash: md5
+  path: chest_xray
