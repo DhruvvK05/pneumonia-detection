@@ -14,8 +14,7 @@ dvc_storage/
 mlruns/
 mlflow.db
 
-# Models
-models/*.keras
+
 
 # Docker
 *.tar
