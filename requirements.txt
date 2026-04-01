@@ -1,4 +1,4 @@
-tensorflow
+tensorflow-cpu
 mlflow
 dvc
 numpy
@@ -6,3 +6,4 @@ pandas
 scikit-learn
 pillow
 opencv-python
+streamlit
