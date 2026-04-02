@@ -1,27 +1,64 @@
-name: Pneumonia Model CI
+name: ML CI/CD Pipeline
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  test-code:
+  train-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
+      # 2️⃣ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Check Python scripts
+      # 4️⃣ Run training
+      - name: Train model
         run: |
-          python -m py_compile train.py
-          python -m py_compile predict.py
+          python train.py
+
+      # 5️⃣ Check if model improved
+      - name: Check improvement
+        run: |
+          if grep -q "YES" model_improved.txt; then
+            echo "MODEL_IMPROVED=true" >> $GITHUB_ENV
+          else
+            echo "MODEL_IMPROVED=false" >> $GITHUB_ENV
+          fi
+
+      # 6️⃣ Upload model (only if improved)
+      - name: Upload model artifact
+        if: env.MODEL_IMPROVED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: models/final_model.keras
+
+      # 7️⃣ Commit updated best accuracy
+      - name: Commit best accuracy
+        if: env.MODEL_IMPROVED == 'true'
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add best_accuracy.txt
+          git commit -m "Update best accuracy [CI]"
+          git push
+
+      # 8️⃣ Deploy (Render / optional)
+      - name: Deploy trigger
+        if: env.MODEL_IMPROVED == 'true'
+        run: |
+          echo "🚀 New best model deployed!"
