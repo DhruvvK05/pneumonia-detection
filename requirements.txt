@@ -8,3 +8,4 @@ streamlit
 numpy
 pillow
 google-generativeai
+python-dotenv
