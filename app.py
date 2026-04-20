@@ -1,4 +1,7 @@
 import os
+from chatbot import get_chatbot_response
+
+# 🔹 Silence TensorFlow logs
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
@@ -47,7 +50,7 @@ uploaded_file = st.file_uploader("📤 Upload Chest X-ray Image", type=["jpg", "
 # 🔹 Predict button
 predict_btn = st.button("🔍 Predict")
 
-# 🔹 Run only when button clicked
+# 🔹 Prediction logic
 if uploaded_file is not None:
 
     img = Image.open(uploaded_file).convert("RGB").resize((IMG_SIZE, IMG_SIZE))
@@ -66,7 +69,11 @@ if uploaded_file is not None:
             predicted_class = CLASS_NAMES[np.argmax(prediction)]
             confidence = float(np.max(prediction) * 100)
 
-            # 🔹 Label extraction
+            # ✅ Save to session for chatbot
+            st.session_state.predicted_class = predicted_class
+            st.session_state.confidence = confidence
+
+            # 🔹 Extract actual label (demo)
             file_name = uploaded_file.name.lower()
 
             if "bacteria" in file_name:
@@ -90,13 +97,10 @@ if uploaded_file is not None:
         with col2:
             st.metric("📊 Confidence", f"{confidence:.2f}%")
 
-        # 🔹 Confidence bar
         st.progress(int(confidence))
 
-        # 🔹 Actual label
         st.write(f"🧾 Actual (from filename): **{actual_label}**")
 
-        # 🔹 Result indicator
         if actual_label != "Unknown":
             if predicted_class == actual_label:
                 st.success("✅ Correct Prediction")
@@ -107,3 +111,38 @@ if uploaded_file is not None:
 
 else:
     st.info("👆 Upload an image to get started")
+
+# 💬 CHATBOT SECTION (AFTER prediction)
+st.divider()
+st.subheader("💬 AI Assistant")
+
+st.warning("This is an educational AI assistant, not medical advice.")
+
+# Init chat history
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+# Disable chatbot if no prediction yet
+if "predicted_class" not in st.session_state:
+    st.info("👆 Please run prediction first to use AI assistant")
+else:
+
+    user_input = st.text_input("Ask about your result")
+
+    if st.button("Send") and user_input:
+
+        predicted_class = st.session_state.get("predicted_class")
+        confidence = st.session_state.get("confidence")
+
+        reply = get_chatbot_response(
+            user_input,
+            predicted_class,
+            confidence
+        )
+
+        st.session_state.chat_history.append(("You", user_input))
+        st.session_state.chat_history.append(("AI", reply))
+
+# 🔹 Display chat
+for role, msg in st.session_state.chat_history:
+    st.write(f"**{role}:** {msg}")
