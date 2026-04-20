@@ -22,44 +22,39 @@ MODEL_PATH = "models/final_model.keras"
 IMG_SIZE = 224
 CLASS_NAMES = ['NORMAL', 'bacterial', 'viral']
 
-# 🔹 Page settings
+# 🔹 Page
 st.set_page_config(page_title="Pneumonia AI", layout="centered")
 
-# 🔹 Load model once
+# 🔹 Load model
 @st.cache_resource
 def load_model():
     return tf.keras.models.load_model(MODEL_PATH)
 
 model = load_model()
 
-# 🔹 Title
+# 🔹 Header
 st.markdown(
-    "<h1 style='text-align: center;'>🩺 Pneumonia Detection AI</h1>",
+    "<h1 style='text-align:center;'>🩺 Pneumonia Detection AI</h1>",
     unsafe_allow_html=True
 )
 st.markdown(
-    "<p style='text-align: center; color: gray;'>Upload a Chest X-ray and let AI analyze it</p>",
+    "<p style='text-align:center; color:gray;'>Upload a Chest X-ray and chat with AI</p>",
     unsafe_allow_html=True
 )
 
 st.divider()
 
 # 🔹 Upload
-uploaded_file = st.file_uploader("📤 Upload Chest X-ray Image", type=["jpg", "png", "jpeg"])
-
-# 🔹 Predict button
+uploaded_file = st.file_uploader("📤 Upload Chest X-ray", type=["jpg", "png", "jpeg"])
 predict_btn = st.button("🔍 Predict")
 
-# 🔹 Prediction logic
-if uploaded_file is not None:
-
+# 🔹 Prediction
+if uploaded_file:
     img = Image.open(uploaded_file).convert("RGB").resize((IMG_SIZE, IMG_SIZE))
     st.image(img, caption="Uploaded Image", width=300)
 
     if predict_btn:
-
-        with st.spinner("🧠 Analyzing X-ray..."):
-
+        with st.spinner("⚡ Analyzing..."):
             img_array = np.array(img)
             img_array = np.expand_dims(img_array, axis=0)
             img_array = preprocess_input(img_array)
@@ -69,80 +64,74 @@ if uploaded_file is not None:
             predicted_class = CLASS_NAMES[np.argmax(prediction)]
             confidence = float(np.max(prediction) * 100)
 
-            # ✅ Save to session for chatbot
             st.session_state.predicted_class = predicted_class
             st.session_state.confidence = confidence
 
-            # 🔹 Extract actual label (demo)
-            file_name = uploaded_file.name.lower()
-
-            if "bacteria" in file_name:
-                actual_label = "bacterial"
-            elif "virus" in file_name:
-                actual_label = "viral"
-            elif file_name.startswith("im"):
-                actual_label = "NORMAL"
-            else:
-                actual_label = "Unknown"
-
-        # 🔥 RESULTS UI
         st.divider()
-        st.subheader("🧾 Diagnosis Result")
+        st.subheader("🧾 Result")
 
         col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric("🧠 Prediction", predicted_class)
-
-        with col2:
-            st.metric("📊 Confidence", f"{confidence:.2f}%")
+        col1.metric("Prediction", predicted_class)
+        col2.metric("Confidence", f"{confidence:.1f}%")
 
         st.progress(int(confidence))
 
-        st.write(f"🧾 Actual (from filename): **{actual_label}**")
-
-        if actual_label != "Unknown":
-            if predicted_class == actual_label:
-                st.success("✅ Correct Prediction")
-            else:
-                st.error("❌ Incorrect Prediction")
-        else:
-            st.warning("⚠️ Could not detect label from filename")
-
 else:
-    st.info("👆 Upload an image to get started")
+    st.info("👆 Upload image first")
 
-# 💬 CHATBOT SECTION (AFTER prediction)
+# ================= CHAT =================
 st.divider()
 st.subheader("💬 AI Assistant")
 
-st.warning("This is an educational AI assistant, not medical advice.")
+st.caption("Educational use only • Not medical advice")
 
-# Init chat history
+# Init chat
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Disable chatbot if no prediction yet
+# Block until prediction
 if "predicted_class" not in st.session_state:
-    st.info("👆 Please run prediction first to use AI assistant")
+    st.info("Run prediction to enable chatbot")
+
 else:
+    # 🔹 Chat display
+    for role, msg in st.session_state.chat_history:
+        if role == "user":
+            st.markdown(f"""
+            <div style='text-align:right; background:#DCF8C6;
+            padding:10px; border-radius:10px; margin:5px'>
+            {msg}
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style='text-align:left; background:#F1F0F0;
+            padding:10px; border-radius:10px; margin:5px'>
+            {msg}
+            </div>
+            """, unsafe_allow_html=True)
 
-    user_input = st.text_input("Ask about your result")
+    # 🔹 Input form (FAST + clean)
+    with st.form("chat_form", clear_on_submit=True):
 
-    if st.button("Send") and user_input:
-
-        predicted_class = st.session_state.get("predicted_class")
-        confidence = st.session_state.get("confidence")
-
-        reply = get_chatbot_response(
-            user_input,
-            predicted_class,
-            confidence
+        user_input = st.text_input(
+            "Type message and press Enter",
+            placeholder="Ask about your result..."
         )
 
-        st.session_state.chat_history.append(("You", user_input))
-        st.session_state.chat_history.append(("AI", reply))
+        submitted = st.form_submit_button("Send")
 
-# 🔹 Display chat
-for role, msg in st.session_state.chat_history:
-    st.write(f"**{role}:** {msg}")
+        if submitted and user_input:
+
+            st.session_state.chat_history.append(("user", user_input))
+
+            with st.spinner("⚡ Thinking..."):
+                reply = get_chatbot_response(
+                    user_input,
+                    st.session_state.predicted_class,
+                    st.session_state.confidence
+                )
+
+            st.session_state.chat_history.append(("ai", reply))
+
+            st.rerun()

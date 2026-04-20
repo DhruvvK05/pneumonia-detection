@@ -1,60 +1,36 @@
 # chatbot.py
 
-from langchain_community.chat_models import ChatOllama
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
+import os
+import google.generativeai as genai
 
-# 🔹 Initialize model
-llm = ChatOllama(
-    model="llama3",
-    temperature=0.4
-)
+# 🔹 Setup Gemini
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# 🔹 Memory (stores conversation)
-memory = ConversationBufferMemory()
+model = genai.GenerativeModel("gemini-1.5-flash")
 
-# 🔹 System prompt
 SYSTEM_PROMPT = """
-You are a friendly AI health assistant for an educational demo.
+You are a friendly AI assistant.
 
-You can:
-- Explain pneumonia types (normal, bacterial, viral)
-- Describe symptoms simply
-- Suggest general precautions
-- Tell when to see a doctor
+Explain pneumonia (normal, bacterial, viral) simply.
+Give general advice and precautions.
 
-You must NOT:
-- Give medicines or prescriptions
-- Act like a real doctor
+Do NOT give medicines or prescriptions.
 
-Keep answers short, clear, and beginner-friendly.
-Always end with: "This is educational, not medical advice."
+Keep answer very short (2-3 lines max).
+End with: This is educational, not medical advice.
 """
-
-# 🔹 Conversation chain
-conversation = ConversationChain(
-    llm=llm,
-    memory=memory,
-    verbose=False
-)
 
 
 def get_chatbot_response(user_input, predicted_class=None, confidence=None):
-    """Main chatbot function"""
 
     context = ""
-
     if predicted_class:
-        context = f"""
-Model Prediction: {predicted_class}
-Confidence: {confidence:.2f}%
-"""
+        context = f"Prediction: {predicted_class}, Confidence: {confidence:.1f}%\n"
 
-    full_input = SYSTEM_PROMPT + context + "\nUser: " + user_input
+    prompt = SYSTEM_PROMPT + context + "\nUser: " + user_input
 
     try:
-        response = conversation.predict(input=full_input)
-        return response
-
-    except Exception as e:
-        return f"⚠️ Error: {str(e)}"
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception:
+        return "⚠️ AI is busy, try again."
