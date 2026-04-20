@@ -4,8 +4,7 @@ dvc
 numpy
 pandas
 scikit-learn
-pillow
-opencv-python
 streamlit
+numpy
+pillow
 google-generativeai
-requests
