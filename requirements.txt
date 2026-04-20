@@ -1,11 +1,6 @@
-tensorflow-cpu
-mlflow
-dvc
-numpy
-pandas
-scikit-learn
 streamlit
+tensorflow-cpu
 numpy
 pillow
-google-generativeai
+requests
 python-dotenv
